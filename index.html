@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="uz">
 <head>
@@ -194,7 +193,6 @@
 
     .contact-link.hidden { display: none !important; }
 
-    /* Ulashilgan profilni ko‘rganda ma’lumotning o‘zi bosiladigan bo‘ladi */
     body.viewing-shared .field input { display: none; }
 
     body.viewing-shared .contact-link {
@@ -254,6 +252,34 @@
       margin-top: 0;
     }
 
+    .qr-wrapper {
+      margin-top: 20px;
+      padding: 16px 10px;
+      text-align: center;
+      background: #07142a;
+      border: 1px solid #164b85;
+      border-radius: 16px;
+    }
+
+    .qr-wrapper p {
+      margin: 0 0 12px;
+    }
+
+    #qrCode {
+      display: inline-block;
+      padding: 12px;
+      background: white;
+      border-radius: 12px;
+      min-height: 20px;
+    }
+
+    #qrCode img,
+    #qrCode canvas {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+
     .hidden { display: none !important; }
     input:disabled { opacity: .85; }
 
@@ -270,6 +296,9 @@
       .icon-box { width: 45px; height: 45px; border-radius: 13px; }
       .icon-box svg { width: 25px; height: 25px; }
       .field input { padding: 10px 8px; font-size: 13px; }
+      .share-link { flex-wrap: wrap; }
+      .share-link input { width: 100%; }
+      .share-link button { width: 100%; }
     }
   </style>
 </head>
@@ -345,11 +374,20 @@
         <button type="button" id="shareBtn" onclick="createShareLink()">
           🔗 Ulashish havolasini yaratish
         </button>
+
         <div id="shareResult" class="hidden">
           <p class="hint">Havolani boshqa odamga yuboring:</p>
+
           <div class="share-link">
             <input id="shareUrl" readonly aria-label="Ulashish havolasi">
             <button type="button" onclick="copyShareLink()">Nusxalash</button>
+          </div>
+
+          <div class="qr-wrapper">
+            <p class="hint">📱 QR-kodni skanerlab profilni oching</p>
+            <div id="qrCode" aria-label="Profil QR-kodi"></div>
+            <p class="hint">QR-kodni boshqa odam telefon kamerasi bilan skanerlasin.</p>
+            <button type="button" onclick="downloadQRCode()">⬇️ QR-kodni saqlash</button>
           </div>
         </div>
       </div>
@@ -361,6 +399,9 @@
 
     <footer>NearShare © 2026</footer>
   </main>
+
+  <!-- QR-kod yaratish kutubxonasi -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <script>
     const ids = ["telefon", "telegram", "instagram"];
@@ -395,7 +436,6 @@
     function updateContactLinks() {
       const d = getData();
 
-      // Telefon raqami: tel: havolasi
       const phone = d.telefon.replace(/[^\d+]/g, "").replace(/(?!^)\+/g, "");
       const phoneValid = /^\+?\d{5,15}$/.test(phone);
 
@@ -405,7 +445,6 @@
         "📞 " + d.telefon
       );
 
-      // Telegram: @username yoki t.me havolasi
       let telegramUrl = "";
       const tg = d.telegram;
 
@@ -425,7 +464,6 @@
 
       setContactLink("telegramLink", telegramUrl, "✈️ " + tg);
 
-      // Instagram: @username yoki profil havolasi
       let instagramUrl = "";
       const ig = d.instagram;
 
@@ -510,6 +548,24 @@
       return response.json();
     }
 
+    function generateQRCode(url) {
+      const container = $("qrCode");
+      container.innerHTML = "";
+
+      if (typeof QRCode === "undefined") {
+        throw new Error("QR-kod kutubxonasi yuklanmadi.");
+      }
+
+      new QRCode(container, {
+        text: url,
+        width: 200,
+        height: 200,
+        colorDark: "#050816",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    }
+
     async function createShareLink() {
       const d = getData();
 
@@ -540,13 +596,15 @@
         $("shareUrl").value = url.toString();
         $("shareResult").classList.remove("hidden");
 
+        generateQRCode(url.toString());
+
         $("saveStatus").textContent =
-          "✓ Ma’lumotlar internetda saqlandi. Havolani nusxalab yuborishingiz mumkin.";
+          "✓ Ma’lumotlar internetda saqlandi. Havola yoki QR-kodni yuboring.";
       } catch (error) {
         console.error(error);
         $("saveStatus").textContent =
-          "Ulashish havolasi yaratilmadi. Supabase sozlamalarini tekshiring.";
-        alert("Xatolik yuz berdi. Supabase sozlamalarini tekshirish kerak.");
+          "Ulashish havolasi yaratilmadi. Internet va Supabase sozlamalarini tekshiring.";
+        alert("Xatolik yuz berdi. Internet va Supabase sozlamalarini tekshiring.");
       } finally {
         button.disabled = false;
         button.textContent = "🔗 Yangi ulashish havolasini yaratish";
@@ -563,8 +621,33 @@
           "✓ Havola nusxalandi. Endi uni yuborishingiz mumkin.";
       } catch {
         $("shareUrl").select();
-        alert("Havolani belgiladim. Ctrl+C bosib nusxalang.");
+        alert("Havolani belgilang va Ctrl+C bosib nusxalang.");
       }
+    }
+
+    function downloadQRCode() {
+      const container = $("qrCode");
+      const canvas = container.querySelector("canvas");
+      const image = container.querySelector("img");
+      let dataUrl = "";
+
+      if (canvas) {
+        dataUrl = canvas.toDataURL("image/png");
+      } else if (image && image.src) {
+        dataUrl = image.src;
+      }
+
+      if (!dataUrl) {
+        alert("Avval QR-kod yarating.");
+        return;
+      }
+
+      const link = document.createElement("a");
+      link.href = dataUrl;
+      link.download = "NearShare-QR.png";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
     }
 
     async function loadSharedProfile(shareId) {
@@ -600,7 +683,7 @@
       } catch (error) {
         console.error(error);
         $("saveStatus").textContent =
-          "Profilni yuklab bo‘lmadi. Supabase sozlamalarini tekshiring.";
+          "Profilni yuklab bo‘lmadi. Internet va Supabase sozlamalarini tekshiring.";
       }
     }
 
@@ -610,6 +693,7 @@
       ids.forEach(id => $(id).value = "");
       localStorage.removeItem(storageKey);
       $("shareResult").classList.add("hidden");
+      $("qrCode").innerHTML = "";
 
       updateContactLinks();
 
