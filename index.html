@@ -1,6 +1,8 @@
+```html
 <!DOCTYPE html>
 <html lang="uz">
 <head>
+  <meta name="google-site-verification" content="VyYq0RLs06XkVR2uDrTI5TDR-jRAwOtnWd26YCYD4QE" />
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#050816">
@@ -169,7 +171,6 @@
     const $ = id => document.getElementById(id);
     const storageKey = "nearshare_profile";
 
-    // Supabase loyiha sozlamalari
     const SUPABASE_URL = "https://mkadwaolrpahikxlaokn.supabase.co";
     const SUPABASE_KEY = "sb_publishable_TFhFV8aWOGbXAIoMbqdOGA_3_ElFNhn";
 
@@ -231,7 +232,7 @@
       const button = $("shareBtn");
       button.disabled = true;
       button.textContent = "Havola yaratilmoqda…";
-      $("saveStatus").textContent = "Ma’lumotlar xavfsiz saqlash uchun yuborilmoqda…";
+      $("saveStatus").textContent = "Ma’lumotlar saqlash uchun yuborilmoqda…";
       try {
         const result = await supabaseRPC("create_nearshare_profile", {
           p_telefon: d.telefon || null,
@@ -249,7 +250,7 @@
       } catch (error) {
         console.error(error);
         $("saveStatus").textContent = "Ulashish havolasi yaratilmadi. Supabase sozlamalarini tekshiring.";
-        alert("Xatolik yuz berdi. Agar xohlasangiz, brauzerda F12 → Console dagi qizil xabarni yuboring.");
+        alert("Xatolik yuz berdi. Supabase sozlamalarini tekshirish kerak.");
       } finally {
         button.disabled = false;
         button.textContent = "🔗 Yangi ulashish havolasini yaratish";
@@ -305,3 +306,4 @@
   </script>
 </body>
 </html>
+```
